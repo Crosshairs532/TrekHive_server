@@ -32,6 +32,7 @@ Dbconnect();
 
 const AllusersCollection = client.db('TrekHive').collection('users');
 const PackagesCollection = client.db('TrekHive').collection('packages');
+const BookingsCollection = client.db('TrekHive').collection('Bookings');
 
 app.get('/', (req, res) => {
     res.send('TrekHive Server is running')
@@ -47,6 +48,10 @@ app.get('/packages', async (req, res) => {
     console.log(result);
     res.send(result);
 })
+app.get('/booking', async (req, res) => {
+    const result = await BookingsCollection.find().toArray();
+    res.send(result);
+})
 
 
 app.post('/users', async (req, res) => {
@@ -60,6 +65,15 @@ app.post('/users', async (req, res) => {
         res.send(result)
     }
 })
+
+app.post('/booking', async (req, res) => {
+
+    const booking = req.body;
+    const result = await BookingsCollection.insertOne(booking);
+    res.send(result);
+
+})
+
 
 
 
