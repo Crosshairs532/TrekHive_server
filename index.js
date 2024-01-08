@@ -36,15 +36,15 @@ Dbconnect();
 const AllusersCollection = client.db('TrekHive').collection('users');
 const PackagesCollection = client.db('TrekHive').collection('packages');
 const BookingsCollection = client.db('TrekHive').collection('Bookings');
+const WishlistCollection = client.db('TrekHive').collection('Wishlists');
 
 
 const verifyToken = (req, res, next) => {
     const token = req.headers.Authorization;
+    console.log(token);
     if (!token) {
-
         return res.status(401).send({ message: 'Unauthorized' })
     }
-    // verifying the token
     jwt.verify(token, process.env.TOKEN_KEY, (err, decoded) => {
         if (err) {
             return res.status(401).send({ message: 'Unauthorized' })
@@ -72,7 +72,7 @@ app.get('/packages', async (req, res) => {
     console.log(result);
     res.send(result);
 })
-app.get('/booking', verifyToken, async (req, res) => {
+app.get('/booking', async (req, res) => {
     const { email } = req.query;
     const userEmail = email;
     const filter = {};
@@ -83,11 +83,17 @@ app.get('/booking', verifyToken, async (req, res) => {
     res.send(result);
 })
 app.get('/users', async (req, res) => {
-
     const result = await AllusersCollection.find().toArray();
     res.send(result);
 })
-
+app.get('/wishlist', async (req, res) => {
+    const filter = {}
+    if (req.query?.email) {
+        filter.email = req.query?.email;
+    }
+    const result = await WishlistCollection.find(filter).toArray();
+    res.send(result);
+})
 
 
 app.post('/jwt', (req, res) => {
@@ -112,7 +118,11 @@ app.post('/booking', async (req, res) => {
     const result = await BookingsCollection.insertOne(booking);
     res.send(result);
 })
-
+app.post('/wishlist', async (req, res) => {
+    const wish = req.body;
+    const result = await WishlistCollection.insertOne(wish)
+    res.send(result);
+})
 
 
 app.listen(port, () => {
