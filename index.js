@@ -123,8 +123,12 @@ app.post('/wishlist', async (req, res) => {
     const result = await WishlistCollection.insertOne(wish)
     res.send(result);
 })
-
-
+app.delete('/wishlist', async (req, res) => {
+    const { id } = req.query;
+    const filter = { _id: new ObjectId(id) };
+    const result = await WishlistCollection.deleteOne(filter);
+    res.send(result);
+})
 app.listen(port, () => {
     console.log('TrekHive Server is running on', port);
 })
