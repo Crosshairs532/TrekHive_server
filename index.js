@@ -37,14 +37,13 @@ const AllusersCollection = client.db('TrekHive').collection('users');
 const PackagesCollection = client.db('TrekHive').collection('packages');
 const BookingsCollection = client.db('TrekHive').collection('Bookings');
 const WishlistCollection = client.db('TrekHive').collection('Wishlists');
-const tourGuidesCollection = client.db('TrekHive').collection('TourGuides');
+const tourGuidesCollection = client.db('TrekHive').collection('Guides');
 
 
 
 const verifyToken = (req, res, next) => {
     const tokenn = req.headers.authorization;
     console.log(tokenn, "token");
-    // console.log(req.headers);
     if (!tokenn) {
         return res.status(401).send({ message: 'Unauthorized' })
     }
@@ -100,6 +99,32 @@ app.patch('/admin/users', async (req, res) => {
     res.send(result);
 
 })
+app.post('/admin/guides', async (req, res) => {
+    const guide = req.body;
+    const result = await tourGuidesCollection.insertOne(guide);
+    res.send(result);
+
+})
+
+
+// ========= Tour Guide Check =============
+
+
+app.get('/check/guide', verifyToken, async (req, res) => {
+    const { email } = req.query;
+    const DecodeEmail = req.decode.email;
+    console.log(email);
+    if (email != DecodeEmail) {
+        return res.status(403).send({ message: 'forbidden access' })
+    }
+    const filter = { email: email };
+    const exist = await AllusersCollection.findOne(filter);
+    let guide = false;
+    if (exist) {
+        guide = exist.role == 'guide';
+    }
+    return res.send(guide)
+})
 
 
 
@@ -108,8 +133,15 @@ app.patch('/admin/users', async (req, res) => {
 
 
 
-
-
+app.get('/guides', async (req, res) => {
+    const { id } = req.query;
+    const filter = {};
+    if (id) {
+        filter._id = new ObjectId(id)
+    }
+    const result = await tourGuidesCollection.find(filter).toArray();
+    res.send(result);
+})
 
 app.get('/', (req, res) => {
     res.send('TrekHive Server is running')
