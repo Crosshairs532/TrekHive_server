@@ -37,14 +37,18 @@ const AllusersCollection = client.db('TrekHive').collection('users');
 const PackagesCollection = client.db('TrekHive').collection('packages');
 const BookingsCollection = client.db('TrekHive').collection('Bookings');
 const WishlistCollection = client.db('TrekHive').collection('Wishlists');
+const tourGuidesCollection = client.db('TrekHive').collection('TourGuides');
+
 
 
 const verifyToken = (req, res, next) => {
-    const token = req.headers.Authorization;
-    console.log(token);
-    if (!token) {
+    const tokenn = req.headers.authorization;
+    console.log(tokenn, "token");
+    // console.log(req.headers);
+    if (!tokenn) {
         return res.status(401).send({ message: 'Unauthorized' })
     }
+    const token = req.headers.authorization.split(' ')[1]
     jwt.verify(token, process.env.TOKEN_KEY, (err, decoded) => {
         if (err) {
             return res.status(401).send({ message: 'Unauthorized' })
@@ -54,6 +58,54 @@ const verifyToken = (req, res, next) => {
     })
 }
 
+// check Admin
+
+app.get('/check/admin', verifyToken, async (req, res) => {
+    const { email } = req.query;
+    const DecodeEmail = req.decode.email;
+    console.log(email);
+    if (email != DecodeEmail) {
+        return res.status(403).send({ message: 'forbidden access' })
+    }
+    const filter = { email: email };
+    const exist = await AllusersCollection.findOne(filter);
+    let admin = false;
+    if (exist) {
+        admin = exist.role == 'admin';
+    }
+    return res.send(admin)
+})
+
+// admin
+app.get('/admin/users', async (req, res) => {
+    const result = await AllusersCollection.find().toArray();
+    res.send(result);
+})
+app.post('/admin/package', async (req, res) => {
+    const package = req.body;
+    const result = await PackagesCollection.insertOne(package);
+    res.send(result)
+
+})
+app.patch('/admin/users', async (req, res) => {
+    const { id, role } = req.query;
+    const filter = { _id: new ObjectId(id) };
+    const update = {
+        $set: {
+            role: role
+        }
+    }
+    const result = await AllusersCollection.updateOne(filter, update);
+    res.send(result);
+
+})
+
+
+
+
+
+
+
 
 
 
@@ -62,13 +114,14 @@ app.get('/', (req, res) => {
     res.send('TrekHive Server is running')
 })
 app.get('/packages', async (req, res) => {
-    const { id } = req.query;
-    console.log(id, "hi");
+    const { id, count } = req.query;
+    console.log(typeof (count), "hi");
     let filter = {};
     if (id) {
         filter._id = new ObjectId(id);
     }
-    const result = await PackagesCollection.find(filter).toArray();
+
+    const result = await PackagesCollection.find(filter).limit(parseInt(count)).toArray();
     console.log(result);
     res.send(result);
 })
@@ -82,10 +135,7 @@ app.get('/booking', async (req, res) => {
     const result = await BookingsCollection.find(filter).toArray();
     res.send(result);
 })
-app.get('/users', async (req, res) => {
-    const result = await AllusersCollection.find().toArray();
-    res.send(result);
-})
+
 app.get('/wishlist', async (req, res) => {
     const filter = {}
     if (req.query?.email) {
