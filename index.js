@@ -78,7 +78,8 @@ app.get('/check/admin', verifyToken, async (req, res) => {
 
 // admin
 app.get('/admin/users', async (req, res) => {
-    const result = await AllusersCollection.find().toArray();
+    const { email } = req.query;
+    const result = await AllusersCollection.find({ email: { $ne: email } }).toArray();
     res.send(result);
 })
 app.post('/admin/package', async (req, res) => {
