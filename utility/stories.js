@@ -17,7 +17,6 @@ stories.get('/', async (req, res) => {
     catch (err) {
         res.sendStatus(500)
     }
-
 })
 
 
