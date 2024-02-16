@@ -2,42 +2,20 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const port = process.env.PORT || 4000;
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const stories = require('./stories');
+const { AllusersCollection,
+    PackagesCollection,
+    BookingsCollection,
+    WishlistCollection,
+    tourGuidesCollection,
+} = require('./mongodb');
 require('dotenv').config();
 app.use(cors());
 app.use(express.json())
-
-
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-
-console.log(process.env.DB_USER);
-const uri = 'mongodb+srv://trekhive:n5QZQGRJ8jd0UkRa@cluster0.wtx9jbs.mongodb.net/TrekHive?retryWrites=true&w=majority';
-// DB_USER=trekhive
-// DB_password=hrms6WzGW6eV39ML 
-
-const client = new MongoClient(uri, {
-    serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-    }
-});
-
-const Dbconnect = async () => {
-    try {
-        await client.connect()
-        console.log('TrekHive Database Connected Successfully');
-    }
-    catch (error) {
-        console.log(error.name, error.message);
-    }
-}
-Dbconnect();
-const AllusersCollection = client.db('TrekHive').collection('users');
-const PackagesCollection = client.db('TrekHive').collection('packages');
-const BookingsCollection = client.db('TrekHive').collection('Bookings');
-const WishlistCollection = client.db('TrekHive').collection('Wishlists');
-const tourGuidesCollection = client.db('TrekHive').collection('Guides');
+app.get('/', (req, res) => {
+    res.send('TrekHive Server is running')
+})
 
 
 
@@ -127,12 +105,6 @@ app.get('/check/guide', verifyToken, async (req, res) => {
 })
 
 
-
-
-
-
-
-
 app.get('/guides', async (req, res) => {
     const { id } = req.query;
     const filter = {};
@@ -143,15 +115,16 @@ app.get('/guides', async (req, res) => {
     res.send(result);
 })
 
-app.get('/', (req, res) => {
-    res.send('TrekHive Server is running')
-})
+
 app.get('/packages', async (req, res) => {
-    const { id, count } = req.query;
+    const { id, count, tour } = req.query;
     console.log(typeof (count), "hi");
     let filter = {};
     if (id) {
         filter._id = new ObjectId(id);
+    }
+    if (tour) {
+        filter.tourType = { $regex: tour, $options: 'i' };
     }
 
     const result = await PackagesCollection.find(filter).limit(parseInt(count)).toArray();
@@ -212,6 +185,7 @@ app.delete('/wishlist', async (req, res) => {
     const result = await WishlistCollection.deleteOne(filter);
     res.send(result);
 })
+app.use('/stories', stories);
 app.listen(port, () => {
     console.log('TrekHive Server is running on', port);
 })
